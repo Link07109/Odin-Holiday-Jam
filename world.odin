@@ -49,9 +49,9 @@ music_game,
 music_win: rl.Music
 
 load_audio :: proc() {
-    music_title = rl.LoadMusicStream("Resources/Audio/Music/ascent.wav")
-    music_game = rl.LoadMusicStream("Resources/Audio/Music/minigame.wav")
-    music_win = rl.LoadMusicStream("Resources/Audio/Music/game over.wav")
+    music_title = load_music(.Ascent)
+    music_game = load_music(.Minigame)
+    music_win = load_music(.GameOver)
 }
 
 load_rooms :: proc() {
@@ -97,6 +97,8 @@ load_rooms :: proc() {
 
 reset_tower_room :: proc() {
     player_pos = { 320/2, 180/2 }
+    player_feet_collider.x = player_pos.x + 2
+    player_feet_collider.y = player_pos.y + 11
     for &rect in rect_array {
         rect = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
     }

@@ -37,6 +37,7 @@ main :: proc() {
     // init
     rl.InitWindow(i32(screen_width), i32(screen_height), "Odin Holiday Jam!")
     rl.SetWindowState({ .WINDOW_ALWAYS_RUN })
+    rl.SetWindowIcon(load_image(.Icon))
     rl.SetTargetFPS(60)
     rl.SetExitKey(.GRAVE)
 
@@ -47,9 +48,9 @@ main :: proc() {
     rl.SetTextureFilter(target.texture, .ANISOTROPIC_16X)
     rl.SetTextureWrap(target.texture, .CLAMP)
 
-    title_screen_art := rl.LoadTexture("Resources/title_screen.png")
+    title_screen_art := load_texture(.TitleScreen)
     tileset := load_texture(.Worldtiles)
-    shader := rl.LoadShader(nil, "acerola.frag")
+    shader := load_shader(.Acerola)
     should_use_shader := false
 
     load_audio()
@@ -91,9 +92,9 @@ main :: proc() {
                 timer_start(&rect_timer, 0.4)
             }
         } else if current_room.name == "Win_Screen" {
+            gaming = false
             if rl.IsKeyPressed(.ENTER) {
                 current_room = &room_title_screen
-                gaming = false
             }
         } else {
             timer_update(&room_timer)
@@ -151,11 +152,11 @@ main :: proc() {
             draw_tiles_ldtk(tileset, current_room.tile_data)
             draw_tiles_ldtk(tileset, current_room.custom_tile_data)
             //draw_entity_tiles_ldtk(tileset, current_room.entity_tile_offset, current_room.entity_tile_data)
-            rl.DrawTexturePro(tileset, { 64, 0, 17, 18 }, { player_pos.x, player_pos.y, 17, 18 }, { 0, 0 }, 0, rl.WHITE)
             for rect in rect_array {
                 rl.DrawTexturePro(tileset, rect.src, rect.dst, { 0, 0 }, 0, rl.WHITE)
             }
             handle_collisions(current_room)
+            rl.DrawTexturePro(tileset, { 64, 0, 17, 18 }, { player_pos.x, player_pos.y, 17, 18 }, { 0, 0 }, 0, rl.WHITE)
             //rl.DrawRectangleRec(player_feet_collider, { 0, 255, 0, 125 })
             rl.DrawText(rl.TextFormat("%002.1f", room_timer.lifetime), 5, 10, 10, rl.WHITE)
         }

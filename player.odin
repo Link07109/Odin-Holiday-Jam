@@ -21,7 +21,7 @@ black_timer: Timer
 disappear_update :: proc() {
     rect_array[rect_idx] = {
         src = disappearing_src,
-        dst = { player_pos.x, player_pos.y, 16, 16 }
+        dst = { player_feet_collider.x, player_feet_collider.y, player_feet_collider.width, player_feet_collider.height }
     }
     rect_idx += 1
     timer_start(&rect_timer, 0.4)
