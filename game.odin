@@ -12,6 +12,8 @@ game_screen_height := i32(1080/scale)
 screen_width := f32(1920)
 screen_height := f32(1080)
 
+room_timer: Timer
+
 main :: proc() {
     // -------------------------------------------------------------------------------------------------
     // MEMORY TRACKING
@@ -45,43 +47,118 @@ main :: proc() {
     rl.SetTextureFilter(target.texture, .ANISOTROPIC_16X)
     rl.SetTextureWrap(target.texture, .CLAMP)
 
+    title_screen_art := rl.LoadTexture("Resources/title_screen.png")
     tileset := load_texture(.Worldtiles)
     shader := rl.LoadShader(nil, "acerola.frag")
     should_use_shader := false
 
+    load_audio()
     load_rooms()
     rooms_map := map[string]^Room {
         "Start" = &room_start,
+        "Tower_Base" = &room_tower_base,
+        "Tower_2" = &room_tower_2,
+        "Tower_3" = &room_tower_3,
+        "Tower_4" = &room_tower_4,
+        "Tower_5" = &room_tower_5,
+        "Maze" = &room_maze
     }
     candidate_room := &room_start
     load_world(candidate_room, rooms_map)
 
-    current_room = &room_start
-
-    music := rl.LoadMusicStream("Resources/Audio/Music/balcony.wav")
-    music.looping = true
+    current_room = &room_title_screen
+    current_music := &current_room.music
+    gaming := false
 
     // main loop
     for (!rl.WindowShouldClose()) {
         screen_width = f32(rl.GetScreenWidth())
         screen_height = f32(rl.GetScreenHeight())
 
-        if !rl.IsMusicStreamPlaying(music) {
-            rl.PlayMusicStream(music)
+        if !rl.IsMusicStreamPlaying(current_room.music) {
+            rl.StopMusicStream(current_music^)
+            current_music^ = current_room.music
+            current_music^.looping = true
+            rl.PlayMusicStream(current_music^)
         }
-        rl.UpdateMusicStream(music)
+        rl.UpdateMusicStream(current_music^)
 
-        player_movement()
+        if current_room.name == "Title_Screen" {
+            if rl.IsKeyPressed(.ENTER) {
+                current_room = &room_tower_base
+                gaming = true
+                timer_start(&room_timer, 10)
+                timer_start(&rect_timer, 0.4)
+            }
+        } else if current_room.name == "Win_Screen" {
+            if rl.IsKeyPressed(.ENTER) {
+                current_room = &room_title_screen
+                gaming = false
+            }
+        } else {
+            timer_update(&room_timer)
+            if timer_done(&room_timer) {
+                reset_tower_room()
+                switch current_room.name {
+                case "Tower_Base":
+                    current_room = &room_tower_2
+                case "Tower_2":
+                    current_room = &room_tower_3
+                case "Tower_3":
+                    current_room = &room_tower_4
+                case "Tower_4":
+                    current_room = &room_tower_5
+                case "Tower_5":
+                    current_room = &room_win
+                }
+            }
+
+            player_movement()
+            timer_update(&rect_timer)
+            if timer_done(&rect_timer) {
+                disappear_update()
+                timer_start(&black_timer, 0.4)
+            }
+            timer_update(&black_timer)
+            if timer_done(&black_timer) {
+                if rect_idx > 0 {
+                    rect_array[rect_idx - 1].src = black_src
+                }
+            }
+            for rect in rect_array {
+                if rect.src == black_src {
+                    if rl.CheckCollisionRecs(player_feet_collider, rect.dst) {
+                        go_down_tower()
+                    }
+                }
+            }
+        }
 
         // draw
         rl.BeginTextureMode(target)
         rl.ClearBackground(rl.BLACK)
-        draw_tiles_ldtk(tileset, current_room.tile_data)
-        draw_tiles_ldtk(tileset, current_room.custom_tile_data)
-        handle_collisions(current_room)
-        //draw_entity_tiles_ldtk(tileset, current_room.entity_tile_offset, current_room.entity_tile_data)
-        rl.DrawTexturePro(tileset, { 64, 0, 17, 18 }, { player_pos.x, player_pos.y, 17, 18 }, { 0, 0 }, 0, rl.WHITE)
-        //rl.DrawRectangleRec(player_feet_collider, { 0, 255, 0, 125 })
+        if current_room.name == "Title_Screen" {
+            rl.ClearBackground(rl.SKYBLUE)
+            rl.DrawTexture(title_screen_art, 0, 0, rl.WHITE)
+            rl.DrawText("Tower of Ascension", 70, 70, 20, rl.WHITE)
+            rl.DrawText("Press [ENTER] to start", 70, 90, 10, rl.WHITE)
+        } else if current_room.name == "Win_Screen" {
+            rl.ClearBackground(rl.GREEN)
+            rl.DrawText("You cleared the tower!", 70, 70, 20, rl.WHITE)
+            rl.DrawText("Press [ENTER] to restart", 70, 90, 10, rl.WHITE)
+        }
+        if gaming {
+            draw_tiles_ldtk(tileset, current_room.tile_data)
+            draw_tiles_ldtk(tileset, current_room.custom_tile_data)
+            //draw_entity_tiles_ldtk(tileset, current_room.entity_tile_offset, current_room.entity_tile_data)
+            rl.DrawTexturePro(tileset, { 64, 0, 17, 18 }, { player_pos.x, player_pos.y, 17, 18 }, { 0, 0 }, 0, rl.WHITE)
+            for rect in rect_array {
+                rl.DrawTexturePro(tileset, rect.src, rect.dst, { 0, 0 }, 0, rl.WHITE)
+            }
+            handle_collisions(current_room)
+            //rl.DrawRectangleRec(player_feet_collider, { 0, 255, 0, 125 })
+            rl.DrawText(rl.TextFormat("%002.1f", room_timer.lifetime), 5, 10, 10, rl.WHITE)
+        }
         rl.EndTextureMode()
 
         rl.BeginDrawing()

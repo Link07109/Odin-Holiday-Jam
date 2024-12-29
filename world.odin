@@ -20,24 +20,9 @@ Entity :: struct {
     height: int,
 }
 
-Door :: struct {
-    src: rl.Rectangle,
-    locked_with: string,
-    coll: rl.Rectangle,
-    collided_with: bool,
-    dest_room: ^Room,
-    dest_player_pos: rl.Vector2,
-}
-
-Spike :: struct {
-    coll: rl.Rectangle,
-    up: bool
-}
-
 Room :: struct {
     name: string,
     music: rl.Music,
-    map_pos: rl.Vector2,
 
     entity_tile_offset: rl.Vector2,
     entity_tile_data: [dynamic]Entity,
@@ -49,23 +34,89 @@ Room :: struct {
 room_title_screen,
 room_game_over,
 room_win,
-room_start: Room
+room_start,
+room_tower_base,
+room_tower_2,
+room_tower_3,
+room_tower_4,
+room_tower_5,
+room_maze: Room
 
 current_room: ^Room
+
+music_title,
+music_game,
+music_win: rl.Music
+
+load_audio :: proc() {
+    music_title = rl.LoadMusicStream("Resources/Audio/Music/ascent.wav")
+    music_game = rl.LoadMusicStream("Resources/Audio/Music/minigame.wav")
+    music_win = rl.LoadMusicStream("Resources/Audio/Music/game over.wav")
+}
 
 load_rooms :: proc() {
     room_title_screen = Room {
         name = "Title_Screen",
+        music = music_title
     }
     room_game_over = Room {
         name = "Game_Over_Screen",
     }
     room_win = Room {
         name = "Win_Screen",
+        music = music_win
     }
 
     room_start = Room {
-        name = "Balcony",
+        name = "Start",
+    }
+    room_tower_base = Room {
+        name = "Tower_Base",
+        music = music_game
+    }
+    room_tower_2 = Room {
+        name = "Tower_2",
+        music = music_game
+    }
+    room_tower_3 = Room {
+        name = "Tower_3",
+        music = music_game
+    }
+    room_tower_4 = Room {
+        name = "Tower_4",
+        music = music_game
+    }
+    room_tower_5 = Room {
+        name = "Tower_5",
+        music = music_game
+    }
+    room_maze = Room {
+        name = "Maze"
+    }
+}
+
+reset_tower_room :: proc() {
+    player_pos = { 320/2, 180/2 }
+    for &rect in rect_array {
+        rect = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
+    }
+    rect_idx = 0
+    timer_start(&room_timer, 10)
+}
+
+go_down_tower :: proc() {
+    reset_tower_room()
+    switch current_room.name {
+    case "Tower_Base":
+        current_room = &room_tower_base
+    case "Tower_2":
+        current_room = &room_tower_base
+    case "Tower_3":
+        current_room = &room_tower_2
+    case "Tower_4":
+        current_room = &room_tower_3
+    case "Tower_5":
+        current_room = &room_tower_4
     }
 }
 
