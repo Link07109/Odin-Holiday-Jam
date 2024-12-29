@@ -10,7 +10,7 @@ player_feet_collider := rl.Rectangle { 0, 0, 12, 6 }
 
 Disappearing_Tile :: struct { src, dst: rl.Rectangle }
 
-disappearing_src := rl.Rectangle { 112, 16, 16, 16 }
+disappearing_src := rl.Rectangle { 112, 16, 12, 6 }
 black_src := rl.Rectangle { 48, 48, 16, 16 }
 
 rect_array: [200]Disappearing_Tile
@@ -70,6 +70,10 @@ player_edge_collision :: proc() {
 // Minkowski difference
 player_wall_collision :: proc(coll: rl.Rectangle) {
     if rl.CheckCollisionRecs(player_feet_collider, coll) {
+        if !rl.IsSoundPlaying(sound_collision) {
+            rl.SetSoundVolume(sound_collision, 0.5)
+            rl.PlaySound(sound_collision)
+        }
         // Calculation of centers of rectangles
         center1: rl.Vector2 = { player_feet_collider.x + player_feet_collider.width / 2, player_feet_collider.y + player_feet_collider.height / 2 }
         center2: rl.Vector2 = { coll.x + coll.width / 2, coll.y + coll.height / 2 }
